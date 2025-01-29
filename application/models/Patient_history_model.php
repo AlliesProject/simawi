@@ -11,105 +11,97 @@ class Patient_history_model extends CI_Model
 		parent::__construct();
 	}
 
- 	public function get_all_data(){
-    	$this->db->select('*');
-    	$this->db->from('patient_history');
-
+    public function get_all_data(){
+        $this->db->select('patient_history.*, patient.*, patient.Name as patient_name, user.Name as user_name'); 
+        $this->db->from('patient_history');
+        $this->db->join('patient', 'patient_history.RecordNumber = patient.RecordNumber');
+        $this->db->join('user', 'patient_history.ConsultationBy = user.ID');
+        $this->db->order_by('patient_history.id', 'DESC'); 
+    
         return $this->db->get()->result();
     }
+    
+    public function get_all_data_doctor(){
+        $iduser = $this->session->userdata('iduser');
 
+        $this->db->select('patient_history.*, patient_history.ID as ID_history, patient.*, patient.Name as patient_name, user.Name as user_name'); 
+        $this->db->from('patient_history');
+        $this->db->join('patient', 'patient_history.RecordNumber = patient.RecordNumber');
+        $this->db->join('user', 'patient_history.ConsultationBy = user.ID');
+        $this->db->where('ConsultationBy', $iduser);
+        $this->db->order_by('patient_history.id', 'DESC'); 
+    
+        return $this->db->get()->result();
+    }
+    
     public function get_total_data(){
         $this->db->from('patient_history');
-        $this->db->where('DateVisit', date('Y-m-d')); // Menggunakan fungsi DATE untuk mencocokkan tanggal (format YYYY-MM-DD)
+        $this->db->where('DateVisit', date('Y-m-d'));
         return $this->db->count_all_results();
     }
 
-    public function get_next_id(){
-        $last = $this->db->select('RecordNumber')
-                         ->from('patient')
-                         ->order_by('RecordNumber', 'DESC')
-                         ->limit(1)
-                         ->get()
-                         ->row();
-    
-        return $last ? $last->RecordNumber + 1 : 1;
+    public function get_top_10_diseases() {
+        $this->db->select('ICD10Name, COUNT(*) as total');
+        $this->db->from('patient_history');
+        $this->db->group_by('ICD10Name');
+        $this->db->where('isDone', '1');
+        $this->db->order_by('total', 'DESC');
+        $this->db->limit(10);
+        $query = $this->db->get();
+        
+        return $query->result();
     }
-    
+
     public function get_id($id){
-        return $this->db->select('*')
-                        ->from('patient')
-                        ->where('ID',$id)
+        return $this->db->select('patient_history.*, patient_history.ID as ID_history, patient.*')
+                        ->from('patient_history')
+                        ->join('patient', 'patient_history.RecordNumber = patient.RecordNumber')
+                        ->where('patient_history.ID',$id)
                         ->get()->row();
     }
 
     public function simpan_data(){
-        $recordnumber = $this->input->post('recordnumber');
-        $name = $this->input->post('name');
-        $birth = $this->input->post('birth');
-        $nik = $this->input->post('nik');
-        $phone = $this->input->post('phone');
-        $address = $this->input->post('address');
-        $bloodtype = $this->input->post('bloodtype');
-        $weight = $this->input->post('weight');
-        $height = $this->input->post('height');
-    
-        $ceknik = $this->db->get_where('patient',array('NIK'=> $nik));
+        $patient = $this->input->post('patient');
+        $doctor = $this->input->post('doctor');
+        $iduser = $this->session->userdata('iduser');
+        $today = date('Y-m-d');
 
-        if ($ceknik->num_rows()>0) {
+        $cekpatient = $this->db->get_where('patient_history', array(
+            'RecordNumber' => $patient, 
+            'DATE(DateVisit)' => $today
+        ));
+        
+        if ($cekpatient->num_rows()>0) {
             return "0";
         }else{
             $patient = array(
-                'RecordNumber' => $recordnumber,
-                'Name' => $name,
-                'Birth' => $birth,
-                'NIK' => $nik,
-                'Phone' => $phone,
-                'Address' =>  $address,
-                'BloodType' => $bloodtype,
-                'Weight' =>  $weight,
-                'Height' =>  $height,
-                'CreatedAt' => date('Y-m-d H:i:s'),
-                'UpdatedAt' => date('Y-m-d H:i:s'),
+                'RecordNumber' => $patient,
+                'DateVisit' => $today,
+                'RegisteredBy' => $iduser,
+                'ConsultationBy' => $doctor,
+                'isDone' => '0',
             );
 
-            $this->db->insert('patient',$patient);
+            $this->db->insert('patient_history',$patient);
         }
     }
 
     public function update_data($id){
-        $name = $this->input->post('name');
-        $birth = $this->input->post('birth');
-        $nik = $this->input->post('nik');
-        $phone = $this->input->post('phone');
-        $address = $this->input->post('address');
-        $bloodtype = $this->input->post('bloodtype');
-        $weight = $this->input->post('weight');
-        $height = $this->input->post('height');
-         
-        $ceknik =  $this->db->get_where('patient',array('ID!='=>$id,'NIK'=> $nik));
-  
-        if ($ceknik->num_rows()>0) {
-            return "0";
-        }else{
-            $patient = array(
-                'Name' => $name,
-                'Birth' => $birth,
-                'NIK' => $nik,
-                'Phone' => $phone,
-                'Address' =>  $address,
-                'BloodType' => $bloodtype,
-                'Weight' =>  $weight,
-                'Height' =>  $height,
-                'UpdatedAt' => date('Y-m-d H:i:s'),
-            );
-            $this->db->where('ID',$id)
-                    ->update('patient',$patient);
-        }
+        $symptoms = $this->input->post('symptoms');
+        $diagnose = $this->input->post('diagnose');
+        $codeicd = $this->input->post('codeicd');
+        $nameicd = $this->input->post('nameicd');
+        
+        $patient = array(
+                'Symptoms' => $symptoms,
+                'DoctorDiagnose' => $diagnose,
+                'ICD10Code' => $codeicd,
+                'ICD10Name' => $nameicd,
+                'isDone' => '1',
+        );
+        
+        $this->db->where('ID',$id)
+                ->update('patient_history',$patient);
     }
-  
-    public function delete_data($id){
-        $this->db->where('ID', $id)
-             ->delete('patient');
-    }
-  
+    
 }

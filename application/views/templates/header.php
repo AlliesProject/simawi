@@ -134,6 +134,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         $notife = "Email sudah digunakan!!!";
       }elseif ($msgerror=="errornik") {     
         $notife = "NIK sudah digunakan!!!";
+      }elseif ($msgerror=="errorpatient") {     
+        $notife = "Pasien sudah daftar hari ini!!!";
       }
     ?>     
 
@@ -173,21 +175,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                   <?php
                 }elseif ($this->session->userdata('role')=='Doctor') {
                   ?>
-                  <li><a href="?hal=dataakun"><i class="fa fa-user"></i>Data Akun </a></li>
-                  <li><a href="?hal=setting"><i class="fa fa-cog"></i>Setting </a></li>
-                  <li><a href="?hal=datapemasukan"><i class="fa fa-money"></i>Data Pemasukan </a></li>
-                  <li><a href="?hal=datapengeluaran"><i class="fa fa-bars"></i>Data Pengeluaran </a></li>
-                  <li><a href="?hal=datajurnalumum"><i class="fa fa-book"></i>Jurnal Umum </a></li>
-                  <li><a><i class="fa fa-file"></i>Laporan <span class="fa fa-chevron-down"></span></a>
-                    <ul class="nav child_menu">
-                      <li><a href="?hal=laporanpemasukan">Laporan Pemasukan </a></li>
-                      <li><a href="?hal=laporanpengeluaran">Laporan Pengeluaran </a></li>
-                      <li><a href="?hal=laporanjurnalumum">Laporan Jurnal Umum </a></li>
-                      <li><a href="?hal=laporanbukubesar">Laporan Buku Besar </a></li>
-                      <li><a href="?hal=laporanlabarugi">Laporan Laba Rugi </a></li>
-                      <li><a href="?hal=laporanneraca">Laporan Neraca </a></li>
-                    </ul>
-                  </li>
+                  <li><a href="<?php echo base_url() ?>rekammedis"><i class="fa fa-book"></i>Rekam Medis </a></li>
                   <?php
                 }
                 ?>

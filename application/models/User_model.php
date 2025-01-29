@@ -11,9 +11,17 @@ class User_model extends CI_Model
 		parent::__construct();
 	}
 
- 	public function get_all_data(){
+    public function get_all_data(){
     	$this->db->select('*');
     	$this->db->from('user');
+
+        return $this->db->get()->result();
+    }
+    
+ 	public function get_all_doctor(){
+    	$this->db->select('*');
+    	$this->db->from('user');
+    	$this->db->where('Role','Doctor');
 
         return $this->db->get()->result();
     }
